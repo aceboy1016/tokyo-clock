@@ -1,0 +1,202 @@
+:root {
+    --bg-color: #0f172a;
+    /* Deep blue-grey */
+    --clock-bg: #1e293b;
+    --accent-color: #38bdf8;
+    /* Sky blue */
+    --second-hand-color: #f43f5e;
+    /* Rose */
+    --hour-hand-color: #e2e8f0;
+    --minute-hand-color: #94a3b8;
+    --glow-color: rgba(56, 189, 248, 0.5);
+    --glass-highlight: rgba(255, 255, 255, 0.1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: var(--bg-color);
+    background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+    font-family: 'Orbitron', 'Noto Sans JP', sans-serif;
+    color: white;
+    overflow: hidden;
+}
+
+.container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+}
+
+.clock-wrapper {
+    position: relative;
+    filter: drop-shadow(0 0 20px rgba(0, 0, 0, 0.5));
+}
+
+.clock {
+    width: 350px;
+    height: 350px;
+    background: var(--clock-bg);
+    border-radius: 50%;
+    position: relative;
+    box-shadow:
+        inset 5px 5px 20px rgba(0, 0, 0, 0.5),
+        inset -5px -5px 20px rgba(255, 255, 255, 0.05),
+        0 0 15px var(--glow-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Glass effect overlay */
+.glass-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.1) 100%);
+    pointer-events: none;
+    z-index: 10;
+}
+
+.hour-marks {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+.mark {
+    position: absolute;
+    width: 2px;
+    height: 15px;
+    background: var(--minute-hand-color);
+    left: 50%;
+    transform-origin: 50% 175px;
+    /* Half of clock width */
+    transform: translateX(-50%);
+    opacity: 0.5;
+}
+
+.mark.major {
+    width: 4px;
+    height: 20px;
+    background: var(--hour-hand-color);
+    opacity: 1;
+    box-shadow: 0 0 5px var(--glow-color);
+}
+
+.hand {
+    position: absolute;
+    bottom: 50%;
+    left: 50%;
+    transform-origin: bottom center;
+    transform: translateX(-50%) rotate(0deg);
+    border-radius: 4px 4px 0 0;
+    z-index: 5;
+    transition: transform 0.05s cubic-bezier(0.4, 2.08, 0.55, 0.44);
+    /* Subtle bounce removed for seconds, applied via JS if needed, but smooth css is better or pure JS */
+    /* We will use JS requestAnimationFrame for smooth second hand, strict transform for others */
+}
+
+.hand.hour {
+    width: 6px;
+    height: 80px;
+    background: var(--hour-hand-color);
+}
+
+.hand.minute {
+    width: 4px;
+    height: 120px;
+    background: var(--minute-hand-color);
+}
+
+.hand.second {
+    width: 2px;
+    height: 140px;
+    background: var(--second-hand-color);
+    box-shadow: 0 0 10px var(--second-hand-color);
+    z-index: 6;
+}
+
+.hand.second::after {
+    content: '';
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: var(--second-hand-color);
+    border-radius: 50%;
+    bottom: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.center-dot {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background: white;
+    border-radius: 50%;
+    z-index: 7;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+}
+
+.digital-display {
+    text-align: center;
+    margin-top: 2rem;
+    z-index: 5;
+}
+
+.location {
+    font-size: 1.2rem;
+    letter-spacing: 0.5em;
+    color: var(--accent-color);
+    margin-bottom: 0.5rem;
+    text-shadow: 0 0 10px var(--glow-color);
+    font-weight: 700;
+}
+
+.time-text {
+    font-size: 2.5rem;
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    color: var(--hour-hand-color);
+}
+
+.date-text {
+    font-size: 1rem;
+    color: var(--minute-hand-color);
+    margin-top: 0.5rem;
+    letter-spacing: 0.1em;
+}
+
+/* Shine animation keyframes maybe? */
+@keyframes pulse {
+    0% {
+        opacity: 0.8;
+    }
+
+    50% {
+        opacity: 1;
+        text-shadow: 0 0 15px var(--accent-color);
+    }
+
+    100% {
+        opacity: 0.8;
+    }
+}
+
+.location {
+    animation: pulse 3s infinite ease-in-out;
+}
