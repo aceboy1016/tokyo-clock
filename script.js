@@ -6,6 +6,42 @@ document.addEventListener('DOMContentLoaded', () => {
     const dateText = document.getElementById('date-text');
     const marksContainer = document.querySelector('.hour-marks');
 
+    // Time Synchronization
+    let timeOffset = 0;
+
+    async function syncTime() {
+        try {
+            // Fetch precise time from WorldTimeAPI
+            const start = Date.now();
+            const response = await fetch('https://worldtimeapi.org/api/timezone/Asia/Tokyo');
+            if (!response.ok) throw new Error('Time sync failed');
+            const data = await response.json();
+
+            // Network latency compensation (RTT / 2)
+            const end = Date.now();
+            const latency = (end - start) / 2;
+
+            // Target time (UNIX ms)
+            // data.datetime is ISO string, parsing it ensures correct absolute time
+            const serverTime = new Date(data.datetime).getTime();
+
+            // Calculate offset: Server Time - Local System Time
+            // We assume 'Date.now()' roughly corresponds to when serverTime was validity + latency
+            // Correct format: ServerTime + Latency ~~ Current True Time
+            // Offset = (ServerTime + Latency) - LocalTime
+            timeOffset = (serverTime + latency) - Date.now();
+
+            console.log(`Time synced. Offset: ${timeOffset}ms (Latency: ${latency}ms)`);
+        } catch (error) {
+            console.log('Using local system time (Sync failed or skipped):', error);
+            // Retry later if failed? 
+        }
+    }
+
+    // Initial sync and periodic re-sync
+    syncTime();
+    setInterval(syncTime, 60000 * 10); // Sync every 10 minutes
+
     // Create clock marks
     for (let i = 0; i < 60; i++) {
         const mark = document.createElement('div');
@@ -18,32 +54,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateClock() {
-        // Get current time
-        const now = new Date();
+        // Current corrected time (UTC timestamp of "Now")
+        const nowMs = Date.now() + timeOffset;
 
-        // Convert to Tokyo Time (UTC+9)
-        // We get UTC time in ms, add 9 hours in ms
-        const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-        const tokyoOffset = 9 * 60 * 60 * 1000;
-        const tokyoTime = new Date(utc + tokyoOffset);
+        // Tokyo logic: UTC + 9 hours
+        // We create a Date object that effectively holds "Tokyo Wall Time" in its UTC slots
+        const tokyoOffsetMs = 9 * 60 * 60 * 1000;
+        const tokyoTime = new Date(nowMs + tokyoOffsetMs);
 
-        const seconds = tokyoTime.getSeconds();
-        const minutes = tokyoTime.getMinutes();
-        const hours = tokyoTime.getHours();
-        const milliseconds = tokyoTime.getMilliseconds();
+        // We use getUTC methods because tokyoTime was shifted by 9 hours manually
+        const milliseconds = tokyoTime.getUTCMilliseconds();
+        const seconds = tokyoTime.getUTCSeconds();
+        const minutes = tokyoTime.getUTCMinutes();
+        const hours = tokyoTime.getUTCHours();
 
         // Calculate angles
-        // Smooth movement for second hand (including ms)
+        // Smooth movement (including ms)
         const secondDegrees = ((seconds + milliseconds / 1000) / 60) * 360;
         const minuteDegrees = ((minutes + seconds / 60) / 60) * 360;
         const hourDegrees = ((hours % 12 + minutes / 60) / 12) * 360;
 
         // Apply rotation
-        /* 
-           Note: The standard 0deg in CSS with our setup is pointing 12 o'clock if we handled it correctly.
-           Our CSS has .hand bottom: 50%, transfom-origin: bottom center. 
-           This means the element sticks up from center. 0deg is 12 o'clock.
-        */
         secondHand.style.transform = `translateX(-50%) rotate(${secondDegrees}deg)`;
         minuteHand.style.transform = `translateX(-50%) rotate(${minuteDegrees}deg)`;
         hourHand.style.transform = `translateX(-50%) rotate(${hourDegrees}deg)`;
@@ -55,11 +86,11 @@ document.addEventListener('DOMContentLoaded', () => {
         timeText.textContent = `${h}:${m}:${s}`;
 
         // Date
-        const year = tokyoTime.getFullYear();
-        const month = String(tokyoTime.getMonth() + 1).padStart(2, '0');
-        const day = String(tokyoTime.getDate()).padStart(2, '0');
+        const year = tokyoTime.getUTCFullYear();
+        const month = String(tokyoTime.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(tokyoTime.getUTCDate()).padStart(2, '0');
         const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-        const dayName = days[tokyoTime.getDay()];
+        const dayName = days[tokyoTime.getUTCDay()];
 
         dateText.textContent = `${year}.${month}.${day} ${dayName}`;
 
