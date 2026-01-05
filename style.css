@@ -10,6 +10,10 @@
     --minute-hand-color: #94a3b8;
     --glow-color: rgba(56, 189, 248, 0.5);
     --glass-highlight: rgba(255, 255, 255, 0.1);
+
+    /* Responsive Size Config */
+    --clock-size: 75vmin;
+    /* Occupies 75% of the smallest viewport dimension */
 }
 
 * {
@@ -28,6 +32,7 @@ body {
     font-family: 'Orbitron', 'Noto Sans JP', sans-serif;
     color: white;
     overflow: hidden;
+    /* Prevent scrolling */
 }
 
 .container {
@@ -35,24 +40,27 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2rem;
+    gap: 3vmin;
+    width: 100%;
+    height: 100vh;
+    justify-content: center;
 }
 
 .clock-wrapper {
     position: relative;
-    filter: drop-shadow(0 0 20px rgba(0, 0, 0, 0.5));
+    filter: drop-shadow(0 0 3vmin rgba(0, 0, 0, 0.5));
 }
 
 .clock {
-    width: 350px;
-    height: 350px;
+    width: var(--clock-size);
+    height: var(--clock-size);
     background: var(--clock-bg);
     border-radius: 50%;
     position: relative;
     box-shadow:
-        inset 5px 5px 20px rgba(0, 0, 0, 0.5),
-        inset -5px -5px 20px rgba(255, 255, 255, 0.05),
-        0 0 15px var(--glow-color);
+        inset 0.5vmin 0.5vmin 4vmin rgba(0, 0, 0, 0.5),
+        inset -0.5vmin -0.5vmin 4vmin rgba(255, 255, 255, 0.05),
+        0 0 3vmin var(--glow-color);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -79,22 +87,24 @@ body {
 
 .mark {
     position: absolute;
-    width: 2px;
-    height: 15px;
+    width: 0.4vmin;
+    height: 3vmin;
     background: var(--minute-hand-color);
     left: 50%;
-    transform-origin: 50% 175px;
-    /* Half of clock width */
+    /* Radius is half of clock size */
+    transform-origin: 50% calc(var(--clock-size) / 2);
     transform: translateX(-50%);
     opacity: 0.5;
+    top: 0;
+    /* Align to top edge to rotate around center correctly */
 }
 
 .mark.major {
-    width: 4px;
-    height: 20px;
+    width: 0.8vmin;
+    height: 4vmin;
     background: var(--hour-hand-color);
     opacity: 1;
-    box-shadow: 0 0 5px var(--glow-color);
+    box-shadow: 0 0 1vmin var(--glow-color);
 }
 
 .hand {
@@ -103,85 +113,91 @@ body {
     left: 50%;
     transform-origin: bottom center;
     transform: translateX(-50%) rotate(0deg);
-    border-radius: 4px 4px 0 0;
+    border-radius: 1vmin 1vmin 0 0;
     z-index: 5;
-    transition: transform 0.05s cubic-bezier(0.4, 2.08, 0.55, 0.44);
-    /* Subtle bounce removed for seconds, applied via JS if needed, but smooth css is better or pure JS */
-    /* We will use JS requestAnimationFrame for smooth second hand, strict transform for others */
+    /* transition: transform 0.05s cubic-bezier(0.4, 2.08, 0.55, 0.44); Remove transition for JS rAF smoothness */
 }
 
 .hand.hour {
-    width: 6px;
-    height: 80px;
+    width: 1.5vmin;
+    height: 22%;
+    /* Relative to clock height */
     background: var(--hour-hand-color);
 }
 
 .hand.minute {
-    width: 4px;
-    height: 120px;
+    width: 1vmin;
+    height: 35%;
     background: var(--minute-hand-color);
 }
 
 .hand.second {
-    width: 2px;
-    height: 140px;
+    width: 0.5vmin;
+    height: 40%;
     background: var(--second-hand-color);
-    box-shadow: 0 0 10px var(--second-hand-color);
+    box-shadow: 0 0 1.5vmin var(--second-hand-color);
     z-index: 6;
 }
 
 .hand.second::after {
     content: '';
     position: absolute;
-    width: 10px;
-    height: 10px;
+    width: 2vmin;
+    height: 2vmin;
     background: var(--second-hand-color);
     border-radius: 50%;
-    bottom: -20px;
+    bottom: -4vmin;
+    /* Counter balance look */
     left: 50%;
     transform: translateX(-50%);
 }
 
 .center-dot {
     position: absolute;
-    width: 12px;
-    height: 12px;
+    width: 3vmin;
+    height: 3vmin;
     background: white;
     border-radius: 50%;
     z-index: 7;
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 1vmin rgba(0, 0, 0, 0.5);
 }
 
 .digital-display {
     text-align: center;
-    margin-top: 2rem;
+    /* Absolute position digital display inside or below? 
+       User wants Full Screen Clock. 
+       Let's put it below but overlapping slightly or just below.
+       Flexbox handles gap.
+    */
     z-index: 5;
+    margin-top: 0;
 }
 
 .location {
-    font-size: 1.2rem;
+    font-size: 3vmin;
     letter-spacing: 0.5em;
     color: var(--accent-color);
-    margin-bottom: 0.5rem;
-    text-shadow: 0 0 10px var(--glow-color);
+    margin-bottom: 1vmin;
+    text-shadow: 0 0 2vmin var(--glow-color);
     font-weight: 700;
 }
 
 .time-text {
-    font-size: 2.5rem;
+    font-size: 6vmin;
     font-weight: 400;
     letter-spacing: 0.1em;
     color: var(--hour-hand-color);
+    line-height: 1.2;
 }
 
 .date-text {
-    font-size: 1rem;
+    font-size: 2.5vmin;
     color: var(--minute-hand-color);
-    margin-top: 0.5rem;
+    margin-top: 0.5vmin;
     letter-spacing: 0.1em;
 }
 
-/* Shine animation keyframes maybe? */
+/* Cineamtic Pulse */
 @keyframes pulse {
     0% {
         opacity: 0.8;
@@ -189,7 +205,7 @@ body {
 
     50% {
         opacity: 1;
-        text-shadow: 0 0 15px var(--accent-color);
+        text-shadow: 0 0 3vmin var(--accent-color);
     }
 
     100% {
