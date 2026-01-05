@@ -9,38 +9,67 @@ document.addEventListener('DOMContentLoaded', () => {
     // Time Synchronization
     let timeOffset = 0;
 
-    async function syncTime() {
+    async function getNetworkTime() {
         try {
-            // Fetch precise time from WorldTimeAPI
-            const start = Date.now();
-            const response = await fetch('https://worldtimeapi.org/api/timezone/Asia/Tokyo');
-            if (!response.ok) throw new Error('Time sync failed');
-            const data = await response.json();
+            // Priority 1: WorldTimeAPI (High Precision)
+            // Short timeout to fallback quickly if blocked
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 2000);
 
-            // Network latency compensation (RTT / 2)
+            const start = Date.now();
+            const response = await fetch('https://worldtimeapi.org/api/timezone/Asia/Tokyo', {
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+
+            if (!response.ok) throw new Error('API Error');
+
+            const data = await response.json();
             const end = Date.now();
             const latency = (end - start) / 2;
 
-            // Target time (UNIX ms)
-            // data.datetime is ISO string, parsing it ensures correct absolute time
-            const serverTime = new Date(data.datetime).getTime();
+            // data.datetime is ISO string with MS precision
+            return new Date(data.datetime).getTime() + latency;
+        } catch (e) {
+            console.log('High precision sync failed, trying fallback...', e);
+        }
 
-            // Calculate offset: Server Time - Local System Time
-            // We assume 'Date.now()' roughly corresponds to when serverTime was validity + latency
-            // Correct format: ServerTime + Latency ~~ Current True Time
-            // Offset = (ServerTime + Latency) - LocalTime
-            timeOffset = (serverTime + latency) - Date.now();
+        try {
+            // Priority 2: Server Date Header (Reliable Fallback)
+            // Works even on restricted networks (uses same domain)
+            const start = Date.now();
+            const response = await fetch(window.location.href, {
+                method: 'HEAD',
+                cache: 'no-store'
+            });
+            const dateHeader = response.headers.get('date');
+            if (!dateHeader) throw new Error('No Date header');
 
-            console.log(`Time synced. Offset: ${timeOffset}ms (Latency: ${latency}ms)`);
-        } catch (error) {
-            console.log('Using local system time (Sync failed or skipped):', error);
-            // Retry later if failed? 
+            const end = Date.now();
+            const latency = (end - start) / 2;
+
+            // Date header is usually accurate to 1 second (e.g. "Mon, 01 Jan 2000 00:00:00 GMT")
+            return new Date(dateHeader).getTime() + latency;
+        } catch (e) {
+            console.error('All time sync methods failed', e);
+            return null;
         }
     }
 
-    // Initial sync and periodic re-sync
+    async function syncTime() {
+        const netTime = await getNetworkTime();
+        if (netTime) {
+            const oldOffset = timeOffset;
+            timeOffset = netTime - Date.now();
+            console.log(`Time synced. New Offset: ${timeOffset}ms (Diff: ${timeOffset - oldOffset}ms)`);
+        }
+    }
+
+    // Aggressive initial sync to correct drift immediately
     syncTime();
-    setInterval(syncTime, 60000 * 10); // Sync every 10 minutes
+    setTimeout(syncTime, 2000);
+    setTimeout(syncTime, 5000);
+    setInterval(syncTime, 60000); // Maintain sync every minute
 
     // Create clock marks
     for (let i = 0; i < 60; i++) {
