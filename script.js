@@ -68,4 +68,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Start loop
     requestAnimationFrame(updateClock);
+
+    // Fullscreen toggle logic
+    document.body.addEventListener('click', () => {
+        const hint = document.querySelector('.fullscreen-hint');
+        if (hint) hint.style.opacity = '0';
+
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(e => {
+                console.log(`Error attempting to enable fullscreen: ${e.message}`);
+            });
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        }
+    });
 });
